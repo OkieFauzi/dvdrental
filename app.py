@@ -19,7 +19,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(user)s:\
 
 db.init_app(app)
 ma = Marshmallow(app)
-from models import Actor, ActorSchema, Film, FilmSchema, Country, CountrySchema, City, CitySchema, CityCountrySchema
+from models import *
 
 #global variable
 actors_schema = ActorSchema(many=True)
@@ -30,6 +30,9 @@ countries_schema = CountrySchema(many=True)
 city_schema = CitySchema()
 cities_schema = CitySchema(many=True)
 city_country_schema = CityCountrySchema()
+address_schema = AddressSchema()
+addresses_schema = AddressSchema(many=True)
+address2_schema = Address2Schema(many=True)
 
 @app.route('/index', methods = ['GET'])
 def index():
@@ -172,14 +175,6 @@ def get_city():
     except Exception as e:
         return jsonify(error=str(e))
 
-@app.route('/country/city/<_id>', methods = ['GET'])
-def get_country_by_city(_id):
-    try:
-        city = City.query.filter_by(city_id = _id).first()
-        return jsonify(city_id = city.city_id, city_name = city.city, country_id = city.country_id, country_name = city.city_country.country)
-    except Exception as e:
-        return jsonify(error=str(e))
-
 @app.route('/city/<_id>', methods = ['GET'])
 def get_city_by_id(_id):
     try:
@@ -222,6 +217,52 @@ def remove_city_by_id(_id):
         return jsonify(city_id=_id)
     except Exception as e:
         return jsonify(error=str(e))
+
+@app.route('/country/city/<_id>', methods = ['GET'])
+def get_country_by_city(_id):
+    try:
+        city = City.query.filter_by(city_id = _id).first()
+        return jsonify(city_id = city.city_id, city_name = city.city, country_id = city.country_id, country_name = city.city_country.country)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+#ADDRESS
+
+@app.route('/address', methods = ['GET'])
+def get_address():
+    try:
+        addresses = Address.query.all()
+        return jsonify(data=addresses_schema.dump(addresses))
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/city/address_id/<_id>', methods = ['GET'])
+def get_city_by_address_id(_id):
+    try:
+        address = Address.query.filter_by(address_id = _id).first()
+        return jsonify(address_id = address.address_id, address = address.address, city_id = address.city_id, city_name = address.address_city.city)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/city/address', methods = ['GET'])
+def get_city_by_address():
+    body = request.json
+    _address = body.get('address')
+    try:
+        address = Address.query.filter_by(address = _address).first()
+        return jsonify(address = address.address, city = address.address_city.city)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/address/city/<_id>', methods = ['GET'])
+def get_address_by_city_id(_id):
+    try:
+        tbaddress = Address.query.filter_by(city_id = _id).all()
+        addresses = [item.address for item in tbaddress]
+        return jsonify(city = _id, address = addresses)
+    except Exception as e:
+        return jsonify(error=str(e))
+                
 
 if __name__== '__main__':
     app.run(debug=True)

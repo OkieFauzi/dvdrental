@@ -47,6 +47,30 @@ class City(db.Model):
     def __repr__(self):
         return '<city_id {}>'.format(self.city_id)
 
+class Address(db.Model):
+    __tablename__='address'
+
+    address_id = db.Column(db.Integer, primary_key=True)
+    address = db.Column(db.String())
+    address2 = db.Column(db.String())
+    district = db.Column(db.String())
+    city_id = db.Column(db.Integer, db.ForeignKey('city.city_id'), nullable=False)
+    postal_code = db.Column(db.Integer)
+    phone = db.Column(db.Integer)
+    last_update = db.Column(db.DateTime, default=datetime.datetime.now())
+    addresses_city = db.ARRAY(db.Integer)
+
+    def __init__(self, address, address2, district, city_id, postal_code, phone):
+        self.address = address
+        self.address2 = address2
+        self.district = district
+        self.city_id = city_id
+        self.postal_code = postal_code
+        self.phone = phone
+    
+    def __repr__(self):
+        return '<address_id {}>'.format(self.address_id)
+
 class Film(db.Model):
     __tablename__='film'
 
@@ -118,3 +142,13 @@ class CitySchema(ma.Schema):
     class Meta:
         fields = ("city_id", "city", "country_id", "last_update")
         model = City
+
+class AddressSchema(ma.Schema):
+    class Meta:
+        fields = ("address_id", "address", "address2", "district", "city_id", "postal_code", "phone", "last_update")
+        model = Address
+
+class Address2Schema(ma.Schema):
+    class Meta:
+        fields = ("address", "city_id")
+        model = Address
