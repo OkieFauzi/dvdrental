@@ -19,7 +19,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://%(user)s:\
 
 db.init_app(app)
 ma = Marshmallow(app)
-from models import Actor, ActorSchema, Film, FilmSchema, Country, CountrySchema
+from models import Actor, ActorSchema, Film, FilmSchema, Country, CountrySchema, City, CitySchema, CityCountrySchema
 
 #global variable
 actors_schema = ActorSchema(many=True)
@@ -27,10 +27,15 @@ actor_schema = ActorSchema()
 film_schema = FilmSchema()
 country_schema = CountrySchema()
 countries_schema = CountrySchema(many=True)
+city_schema = CitySchema()
+cities_schema = CitySchema(many=True)
+city_country_schema = CityCountrySchema()
 
 @app.route('/index', methods = ['GET'])
 def index():
     return 'Hello World'
+
+#ACTOR
 
 @app.route('/actor', methods = ['GET'])
 def get_actors():
@@ -84,6 +89,8 @@ def remove_actor(_id):
         return jsonify(actor_id=_id)
     except Exception as e:
         return jsonify(error=str(e))
+
+#FILM
 
 @app.route('/film/<_id>', methods=['GET'])
 def get_film_by_id(_id):
@@ -143,6 +150,76 @@ def remove_country_by_id(_id):
         db.session.delete(country)
         db.session.commit()
         return jsonify(country_id=_id)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/city/country/<_id>', methods = ['GET'])
+def get_city_by_country_id(_id):
+    try:
+        country = Country.query.filter_by(country_id=_id).first()
+        country.country_cities = [item.city for item in country.country_city]
+        return jsonify(city_country_schema.dump(country))
+    except Exception as e:
+        return jsonify(error=str(e))
+
+#CITY
+
+@app.route('/city', methods = ['GET'])
+def get_city():
+    try:
+        cities = City.query.all()
+        return jsonify(data=cities_schema.dump(cities))
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/country/city/<_id>', methods = ['GET'])
+def get_country_by_city(_id):
+    try:
+        city = City.query.filter_by(city_id = _id).first()
+        return jsonify(city_id = city.city_id, city_name = city.city, country_id = city.country_id, country_name = city.city_country.country)
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/city/<_id>', methods = ['GET'])
+def get_city_by_id(_id):
+    try:
+        city = City.query.filter_by(city_id = _id).first()
+        return jsonify(city_schema.dump(city))
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/city/<_id>', methods = ['PUT'])
+def update_city(_id):
+    body = request.json
+    city = body.get('city')
+    try:
+        tbcity = City.query.filter_by(city_id=_id).first()
+        tbcity.city = city
+        db.session.commit()
+        return jsonify(city_schema.dump(tbcity))
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/city/add', methods = ['POST'])
+def city_add():
+    body = request.json
+    city = body.get('city')
+    country_id = body.get('country_id')
+    try:
+        tbcity = City(city, country_id)
+        db.session.add(tbcity)
+        db.session.commit()
+        return jsonify(city_schema.dump(tbcity))
+    except Exception as e:
+        return jsonify(error=str(e))
+
+@app.route('/city/<_id>', methods = ['DELETE'])
+def remove_city_by_id(_id):
+    try:
+        city = City.query.filter_by(city_id=_id).first()
+        db.session.delete(city)
+        db.session.commit()
+        return jsonify(city_id=_id)
     except Exception as e:
         return jsonify(error=str(e))
 

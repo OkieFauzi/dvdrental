@@ -22,12 +22,30 @@ class Country(db.Model):
     country_id = db.Column(db.Integer, primary_key=True)
     country = db.Column(db.String())
     last_update = db.Column(db.DateTime, default=datetime.datetime.now())
+    country_city = db.relationship('City', backref='Country', lazy=True)
+    country_cities = db.ARRAY(db.Integer)
 
     def __init__(self, country):
         self.country = country
 
     def __repr__(self):
-        return '<country id {}>'.format(self.country_id)
+        return '<country id {} and city id {}>'.format(self.country_id, self.city_id)
+
+class City(db.Model):
+    __tablename__ = 'city'
+
+    city_id = db.Column(db.Integer, primary_key=True)
+    city = db.Column(db.String())
+    country_id = db.Column(db.Integer, db.ForeignKey('country.country_id'), nullable=False)
+    last_update = db.Column(db.DateTime, default=datetime.datetime.now())
+    city_country = db.relationship('Country', backref='City', lazy=True)
+
+    def __init__(self, city, country_id):
+        self.city = city
+        self.country_id = country_id
+
+    def __repr__(self):
+        return '<city_id {}>'.format(self.city_id)
 
 class Film(db.Model):
     __tablename__='film'
@@ -59,7 +77,6 @@ class Film(db.Model):
         self.rating = rating
         self.special_features = special_features
         
-        
     def __repr__(self):
         return '<film id {}>'.format(self.film_id)
 
@@ -68,6 +85,9 @@ class FilmActor(db.Model):
 
     film_id = db.Column(db.Integer, db.ForeignKey('film.film_id'),primary_key=True, nullable=False)
     actor_id = db.Column(db.Integer, db.ForeignKey('actor.actor_id'), primary_key=True, nullable=False)
+
+    def __repr__(self):
+        return '<film id {} AND actor_id {}>'.format(self.actor_id, self.film_id)
 
 class ActorSchema(ma.Schema):
     class Meta:
@@ -88,3 +108,13 @@ class CountrySchema(ma.Schema):
     class Meta:
         fields = ("country_id", "country", "last_update")
         model = Country
+
+class CityCountrySchema(ma.Schema):
+    class Meta:
+        fields = ("country_id", "country", "last_update", "country_cities")
+        model = Country
+
+class CitySchema(ma.Schema):
+    class Meta:
+        fields = ("city_id", "city", "country_id", "last_update")
+        model = City
