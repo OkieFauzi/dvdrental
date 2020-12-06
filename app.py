@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, json, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from sqlalchemy import func
 
 db = SQLAlchemy()
 app = Flask(__name__)
@@ -43,8 +44,8 @@ def index():
 @app.route('/actor', methods = ['GET'])
 def get_actors():
     try:
-        actors = Actor.query.all()
-        return jsonify(data=actors_schema.dump(actors))
+        actors = Actor.query.paginate(page=1, max_per_page=20)
+        return jsonify(data=actors_schema.dump(actors.items), Total_Actor = actors.total)
     except Exception as e:
         return jsonify(error=str(e))
 
@@ -165,6 +166,18 @@ def get_city_by_country_id(_id):
     except Exception as e:
         return jsonify(error=str(e))
 
+@app.route('/city/country/join/<_id>', methods = ['GET'])
+def get_city_by_country_id_join(_id):
+    try:
+        result = db.session.query(Country, City).join(City).filter(Country.country_id == _id).all()
+        cities_list = []
+        for country, city in result:
+            cities_list.append(city.city)
+        for country.city in result:
+            return jsonify(country = country.country, cities = cities_list)
+    except Exception as e:
+            return jsonify(error=str(e))
+
 #CITY
 
 @app.route('/city', methods = ['GET'])
@@ -226,6 +239,14 @@ def get_country_by_city(_id):
     except Exception as e:
         return jsonify(error=str(e))
 
+@app.route('/country/city/join/<_id>', methods = ['GET'])
+def get_country_by_city_id_join(_id):
+    try:
+        result = db.session.query(City, Country).join(Country).filter(City.city_id == _id).first()
+        return jsonify(country_name = result.Country.country, city_name = result.City.city)
+    except Exception as e:
+        return jsonify(error=str(e))
+
 #ADDRESS
 
 @app.route('/address', methods = ['GET'])
@@ -262,7 +283,15 @@ def get_address_by_city_id(_id):
         return jsonify(city = _id, address = addresses)
     except Exception as e:
         return jsonify(error=str(e))
-                
+
+@app.route('/film/actor/func/<_id>', methods = ['GET'])
+def get_film_by_actor_id(_id):
+    try:
+        film = db.session.query(func.get_film_by_actor(_id)).all()
+        #titles = [item.title for item in film]
+        return jsonify(data = film)
+    except Exception as e:
+            return jsonify(error=str(e))
 
 if __name__== '__main__':
     app.run(debug=True)
